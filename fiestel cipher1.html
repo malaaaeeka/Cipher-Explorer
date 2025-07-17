@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEISTEL CIPHER - SINGLE KEY</title>
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #111;
+            color: #ddd;
+            margin: 0;
+            padding: 20px;
+            background-image: 
+                linear-gradient(rgba(20, 20, 20, 0.8), rgba(20, 20, 20, 0.8)),
+                url('/api/placeholder/400/400');
+            line-height: 1.6;
+        }
+
+        /* Main Container */
+        .cipher-machine {
+            max-width: 1000px;
+            margin: 0 auto;
+            border: 1px solid #333;
+            padding: 20px;
+            background: rgba(10, 10, 10, 0.7);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Panel Styles */
+        .panel {
+            border: 1px solid #444;
+            padding: 15px;
+            background: rgba(20, 20, 20, 0.8);
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 10px 10px;
+            pointer-events: none;
+        }
+
+        /* Headers */
+        h1 {
+            color: #e74c3c;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0;
+            text-shadow: 1px 1px 2px #000;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        h3 {
+            color: #e74c3c;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        /* Key Input */
+        .key-container {
+            margin: 15px 0;
+        }
+
+        .key-input {
+            width: 100%;
+            background: #222;
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            color: #ddd;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .key-input:focus {
+            outline: none;
+            border-color: #e74c3c;
+            background: #333;
+            box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+        }
+
+        /* Rounds */
+        .rounds-container {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+        }
+
+        .rounds-label {
+            margin-right: 10px;
+            color: #e74c3c;
+        }
+
+        .rounds-input {
+            background: #222;
+            border: 1px solid #444;
+            padding: 8px;
+            width: 60px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            color: #ddd;
+            font-size: 16px;
+        }
+
+        .rounds-input:focus {
+            outline: none;
+            border-color: #e74c3c;
+            background: #333;
+            box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+        }
+
+        /* Input Area */
+        textarea {
+            width: 100%;
+            background: #222;
+            border: 1px solid #444;
+            padding: 10px;
+            color: #ddd;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        button {
+            background: #222;
+            border: 1px solid #444;
+            color: #ddd;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #333;
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        /* Results */
+        .result {
+            background: #222;
+            border-left: 3px solid #e74c3c;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .result pre {
+            margin: 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cipher-machine">
+        <h1>FEISTEL CIPHER - SINGLE KEY</h1>
+        
+        <div class="panel">
+            <h3>Key</h3>
+            <div class="key-container">
+                <input type="text" class="key-input" id="key" value="SECRETKEY" placeholder="Enter your key">
+            </div>
+            
+            <div class="rounds-container">
+                <label for="rounds" class="rounds-label">Rounds:</label>
+                <input type="number" class="rounds-input" id="rounds" value="4" min="1" max="16">
+            </div>
+            
+            <h3>Text Input</h3>
+            <textarea id="input-text">ATTACK AT DAWN</textarea>
+            
+            <div class="button-group">
+                <button id="encrypt-btn">Encrypt</button>
+                <button id="decrypt-btn">Decrypt</button>
+            </div>
+            
+            <h3>Result</h3>
+            <div class="result" id="result">
+                <pre>Results will appear here...</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Alphabet and encoding utilities
+        const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        
+        // Convert text to numerical values
+        function textToNum(text) {
+            return [...text.toUpperCase()]
+                .filter(char => ALPHABET.includes(char))
+                .map(char => ALPHABET.indexOf(char));
+        }
+
+        // Convert numerical values back to text
+        function numToText(nums) {
+            return nums.map(num => ALPHABET[num % 26]).join('');
+        }
+
+        // String to binary array (8 bits per character)
+        function stringToBinary(str) {
+            const result = [];
+            for (let i = 0; i < str.length; i++) {
+                const binary = str.charCodeAt(i).toString(2).padStart(8, '0');
+                for (let j = 0; j < binary.length; j++) {
+                    result.push(parseInt(binary[j]));
+                }
+            }
+            return result;
+        }
+
+        // Binary array to string (8 bits per character)
+        function binaryToString(binary) {
+            let result = '';
+            for (let i = 0; i < binary.length; i += 8) {
+                const byte = binary.slice(i, i + 8).join('');
+                result += String.fromCharCode(parseInt(byte, 2));
+            }
+            return result;
+        }
+
+        // XOR two arrays
+        function xorArrays(arr1, arr2) {
+            return arr1.map((bit, i) => bit ^ arr2[i % arr2.length]);
+        }
+
+        // Rotate array left
+        function rotateLeft(arr, n) {
+            const rotateAmount = n % arr.length;
+            return [...arr.slice(rotateAmount), ...arr.slice(0, rotateAmount)];
+        }
+
+        // Generate round keys from a single master key
+        function generateRoundKeys(masterKey, rounds) {
+            const keyBin = stringToBinary(masterKey);
+            const keys = [];
+            
+            for (let i = 0; i < rounds; i++) {
+                // Create unique key for each round by rotating
+                const rotatedKey = rotateLeft(keyBin, i * 7);
+                
+                // Add additional permutation for better key diversification
+                const permutedKey = [...rotatedKey];
+                for (let j = 0; j < permutedKey.length; j++) {
+                    if (j % 2 === 0 && j + i < permutedKey.length) {
+                        // Swap bits based on round number
+                        [permutedKey[j], permutedKey[(j + i) % permutedKey.length]] = 
+                        [permutedKey[(j + i) % permutedKey.length], permutedKey[j]];
+                    }
+                }
+                
+                keys.push(permutedKey);
+            }
+            
+            return keys;
+        }
+
+        // F function - the heart of Feistel cipher
+        function feistelFunction(right, roundKey) {
+            // Apply substitution - XOR with round key
+            const substituted = xorArrays(right, roundKey);
+            
+            // Apply permutation - rotate bits
+            const permuted = rotateLeft(substituted, 3);
+            
+            return permuted;
+        }
+
+        // Feistel cipher round
+        function feistelRound(left, right, roundKey) {
+            const newRight = xorArrays(left, feistelFunction(right, roundKey));
+            return [right, newRight]; // Swap left and right, as per Feistel structure
+        }
+
+        // Split input into left and right halves
+        function splitInput(input) {
+            const half = Math.ceil(input.length / 2);
+            return [input.slice(0, half), input.slice(half)];
+        }
+
+        // Pad binary array to ensure even division
+        function padBinary(binary) {
+            // Ensure the length is even for splitting
+            if (binary.length % 2 !== 0) {
+                binary.push(0);
+            }
+            return binary;
+        }
+
+        // Encrypt function
+        function encrypt() {
+            const plaintext = document.getElementById('input-text').value;
+            const masterKey = document.getElementById('key').value;
+            const rounds = parseInt(document.getElementById('rounds').value) || 4;
+            
+            // Convert plaintext to binary
+            let binaryData = stringToBinary(plaintext);
+            binaryData = padBinary(binaryData);
+            
+            // Generate round keys from single master key
+            const roundKeys = generateRoundKeys(masterKey, rounds);
+            
+            // Split into left and right halves
+            let [left, right] = splitInput(binaryData);
+            
+            // Perform Feistel rounds
+            for (let i = 0; i < rounds; i++) {
+                [left, right] = feistelRound(left, right, roundKeys[i]);
+            }
+            
+            // Combine final left and right (without final swap)
+            const encrypted = [...right, ...left];
+            
+            // Convert to Base64 for display
+            const encryptedText = btoa(binaryToString(encrypted));
+            
+            document.getElementById('result').innerHTML = `
+                <p><strong>ENCRYPTED MESSAGE:</strong></p>
+                <pre style="font-size: 1.2em;">${encryptedText}</pre>
+            `;
+        }
+
+        // Decrypt function
+        function decrypt() {
+            try {
+                const ciphertext = document.getElementById('input-text').value;
+                const masterKey = document.getElementById('key').value;
+                const rounds = parseInt(document.getElementById('rounds').value) || 4;
+                
+                // Convert from Base64 to binary
+                let binaryData;
+                try {
+                    binaryData = stringToBinary(atob(ciphertext));
+                    binaryData = padBinary(binaryData);
+                } catch (e) {
+                    throw new Error("Invalid input. Please enter a Base64 encoded string.");
+                }
+                
+                // Generate round keys from single master key (same as encryption)
+                const roundKeys = generateRoundKeys(masterKey, rounds);
+                
+                // Split into left and right halves (reverse of encryption output)
+                let [right, left] = splitInput(binaryData);
+                
+                // Perform Feistel rounds in reverse
+                for (let i = rounds - 1; i >= 0; i--) {
+                    [right, left] = feistelRound(right, left, roundKeys[i]);
+                }
+                
+                // Combine final left and right
+                const decrypted = [...left, ...right];
+                
+                // Convert back to text
+                const decryptedText = binaryToString(decrypted);
+                
+                document.getElementById('result').innerHTML = `
+                    <p><strong>DECRYPTED MESSAGE:</strong></p>
+                    <pre style="font-size: 1.2em;">${decryptedText}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <p style="color: #e74c3c;"><strong>ERROR:</strong> ${error.message}</p>
+                `;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('encrypt-btn').addEventListener('click', encrypt);
+        document.getElementById('decrypt-btn').addEventListener('click', decrypt);
+
+        // Initialize with example
+        encrypt();
+    </script>
+</body>
+</html>

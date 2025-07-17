@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HILL CIPHER</title>
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #111;
+            color: #ddd;
+            margin: 0;
+            padding: 20px;
+            background-image: 
+                linear-gradient(rgba(20, 20, 20, 0.8), rgba(20, 20, 20, 0.8)),
+                url('https://www.transparenttextures.com/patterns/concrete-wall.png');
+            line-height: 1.6;
+        }
+
+        /* Main Container */
+        .cipher-machine {
+            max-width: 1000px;
+            margin: 0 auto;
+            border: 1px solid #333;
+            padding: 20px;
+            background: rgba(10, 10, 10, 0.7);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Panel Styles */
+        .panel {
+            border: 1px solid #444;
+            padding: 15px;
+            background: rgba(20, 20, 20, 0.8);
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 10px 10px;
+            pointer-events: none;
+        }
+
+        /* Headers */
+        h1 {
+            color: #e74c3c;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0;
+            text-shadow: 1px 1px 2px #000;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        h3 {
+            color: #e74c3c;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        /* Matrix Grid */
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin: 15px 0;
+        }
+
+        .matrix-cell {
+            background: #222;
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            color: #ddd;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .matrix-cell:focus {
+            outline: none;
+            border-color: #e74c3c;
+            background: #333;
+            box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+        }
+
+        /* Input Area */
+        textarea {
+            width: 100%;
+            background: #222;
+            border: 1px solid #444;
+            padding: 10px;
+            color: #ddd;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        button {
+            background: #222;
+            border: 1px solid #444;
+            color: #ddd;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #333;
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        /* Results */
+        .result {
+            background: #222;
+            border-left: 3px solid #e74c3c;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .result pre {
+            margin: 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cipher-machine">
+        <h1>HILL CIPHER</h1>
+        
+        <div class="panel">
+            <h3>Key Matrix (3×3)</h3>
+            <div class="matrix-grid">
+                <input type="number" class="matrix-cell" value="17">
+                <input type="number" class="matrix-cell" value="17">
+                <input type="number" class="matrix-cell" value="5">
+                <input type="number" class="matrix-cell" value="21">
+                <input type="number" class="matrix-cell" value="18">
+                <input type="number" class="matrix-cell" value="21">
+                <input type="number" class="matrix-cell" value="2">
+                <input type="number" class="matrix-cell" value="2">
+                <input type="number" class="matrix-cell" value="19">
+            </div>
+            
+            <h3>Text Input</h3>
+            <textarea id="input-text">ATTACK</textarea>
+            
+            <div class="button-group">
+                <button id="encrypt-btn">Encrypt</button>
+                <button id="decrypt-btn">Decrypt</button>
+            </div>
+            
+            <h3>Result</h3>
+            <div class="result" id="result">
+                <pre>Results will appear here...</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Alphabet definition
+        const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        
+        // Get matrix values from the input cells
+        function getKeyMatrix() {
+            const cells = document.querySelectorAll('.matrix-cell');
+            return [
+                [
+                    parseInt(cells[0].value) || 0, 
+                    parseInt(cells[1].value) || 0,
+                    parseInt(cells[2].value) || 0
+                ],
+                [
+                    parseInt(cells[3].value) || 0, 
+                    parseInt(cells[4].value) || 0,
+                    parseInt(cells[5].value) || 0
+                ],
+                [
+                    parseInt(cells[6].value) || 0, 
+                    parseInt(cells[7].value) || 0,
+                    parseInt(cells[8].value) || 0
+                ]
+            ];
+        }
+
+        // Convert text to numerical values
+        function textToNum(text) {
+            return [...text.toUpperCase()]
+                .filter(char => ALPHABET.includes(char))
+                .map(char => ALPHABET.indexOf(char));
+        }
+
+        // Convert numerical values back to text
+        function numToText(nums) {
+            return nums.map(num => ALPHABET[num % 26]).join('');
+        }
+
+        // Prepare text by padding if needed
+        function prepareText(nums, blockSize) {
+            const paddingLength = (blockSize - nums.length % blockSize) % blockSize;
+            return nums.concat(Array(paddingLength).fill(23)); // Pad with 'X'
+        }
+
+        // Matrix multiplication mod 26
+        function matrixMultiply(matrix, vector) {
+            return [
+                (matrix[0][0] * vector[0] + matrix[0][1] * vector[1] + matrix[0][2] * vector[2]) % 26,
+                (matrix[1][0] * vector[0] + matrix[1][1] * vector[1] + matrix[1][2] * vector[2]) % 26,
+                (matrix[2][0] * vector[0] + matrix[2][1] * vector[1] + matrix[2][2] * vector[2]) % 26
+            ];
+        }
+
+        // Calculate modular inverse
+        function modInverse(a, m) {
+            a = ((a % m) + m) % m; // Ensure positive
+            for (let x = 1; x < m; x++) {
+                if ((a * x) % m === 1) return x;
+            }
+            return null;
+        }
+
+        // Calculate matrix determinant
+        function matrixDet(matrix) {
+            const [a, b, c] = matrix[0];
+            const [d, e, f] = matrix[1];
+            const [g, h, i] = matrix[2];
+            return a*(e*i - f*h) - b*(d*i - f*g) + c*(d*h - e*g);
+        }
+
+        // Calculate adjugate matrix
+        function adjugateMatrix(matrix) {
+            const [a, b, c] = matrix[0];
+            const [d, e, f] = matrix[1];
+            const [g, h, i] = matrix[2];
+            
+            return [
+                [(e*i - f*h), -(b*i - c*h), (b*f - c*e)],
+                [-(d*i - f*g), (a*i - c*g), -(a*f - c*d)],
+                [(d*h - e*g), -(a*h - b*g), (a*e - b*d)]
+            ];
+        }
+
+        // Calculate inverse matrix mod 26
+        function inverseMatrix(matrix) {
+            const det = matrixDet(matrix);
+            const detMod = ((det % 26) + 26) % 26;
+            const detInv = modInverse(detMod, 26);
+            
+            if (detInv === null) return null;
+            
+            const adj = adjugateMatrix(matrix);
+            const inv = [];
+            
+            for (let i = 0; i < 3; i++) {
+                inv[i] = [];
+                for (let j = 0; j < 3; j++) {
+                    let val = adj[i][j] * detInv;
+                    val = ((val % 26) + 26) % 26;
+                    inv[i][j] = val;
+                }
+            }
+            
+            return inv;
+        }
+
+        // Encrypt function
+        function encrypt() {
+            const plaintext = document.getElementById('input-text').value;
+            const keyMatrix = getKeyMatrix();
+            const blockSize = 3;
+            
+            // Convert and pad text
+            const nums = prepareText(textToNum(plaintext), blockSize);
+            
+            // Encrypt each block
+            const cipherNums = [];
+            for (let i = 0; i < nums.length; i += blockSize) {
+                const block = nums.slice(i, i + blockSize);
+                const encryptedBlock = matrixMultiply(keyMatrix, block);
+                cipherNums.push(...encryptedBlock);
+            }
+            
+            // Display result
+            const ciphertext = numToText(cipherNums);
+            
+            document.getElementById('result').innerHTML = `
+                <p><strong>ENCRYPTED MESSAGE:</strong></p>
+                <pre style="font-size: 1.2em;">${ciphertext}</pre>
+            `;
+        }
+
+        // Decrypt function
+        function decrypt() {
+            const ciphertext = document.getElementById('input-text').value;
+            const keyMatrix = getKeyMatrix();
+            const blockSize = 3;
+            
+            // Calculate inverse matrix
+            const invMatrix = inverseMatrix(keyMatrix);
+            
+            if (!invMatrix) {
+                document.getElementById('result').innerHTML = `
+                    <p style="color: #e74c3c;"><strong>ERROR:</strong> Cannot decrypt - matrix is not invertible</p>
+                `;
+                return;
+            }
+            
+            // Convert and process ciphertext
+            const nums = textToNum(ciphertext);
+            const plainNums = [];
+            for (let i = 0; i < nums.length; i += blockSize) {
+                const block = nums.slice(i, i + blockSize);
+                if (block.length < blockSize) {
+                    // Pad if the last block is incomplete
+                    while (block.length < blockSize) {
+                        block.push(23); // Pad with 'X'
+                    }
+                }
+                const decryptedBlock = matrixMultiply(invMatrix, block);
+                plainNums.push(...decryptedBlock);
+            }
+            
+            // Display result
+            const plaintext = numToText(plainNums);
+            
+            document.getElementById('result').innerHTML = `
+                <p><strong>DECRYPTED MESSAGE:</strong></p>
+                <pre style="font-size: 1.2em;">${plaintext}</pre>
+            `;
+        }
+
+        // Event listeners
+        document.getElementById('encrypt-btn').addEventListener('click', encrypt);
+        document.getElementById('decrypt-btn').addEventListener('click', decrypt);
+
+        // Initialize with example
+        encrypt();
+    </script>
+</body>
+</html>

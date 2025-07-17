@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES CIPHER</title>
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #111;
+            color: #ddd;
+            margin: 0;
+            padding: 20px;
+            background-image: 
+                linear-gradient(rgba(20, 20, 20, 0.8), rgba(20, 20, 20, 0.8)),
+                url('/api/placeholder/400/400');
+            line-height: 1.6;
+        }
+
+        /* Main Container */
+        .cipher-machine {
+            max-width: 1000px;
+            margin: 0 auto;
+            border: 1px solid #333;
+            padding: 20px;
+            background: rgba(10, 10, 10, 0.7);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Panel Styles */
+        .panel {
+            border: 1px solid #444;
+            padding: 15px;
+            background: rgba(20, 20, 20, 0.8);
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 10px 10px;
+            pointer-events: none;
+        }
+
+        /* Headers */
+        h1 {
+            color: #e74c3c;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0;
+            text-shadow: 1px 1px 2px #000;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        h3 {
+            color: #e74c3c;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        /* Key Input */
+        .key-container {
+            margin: 15px 0;
+        }
+
+        .key-input {
+            width: 100%;
+            background: #222;
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            color: #ddd;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .key-input:focus {
+            outline: none;
+            border-color: #e74c3c;
+            background: #333;
+            box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+        }
+
+        /* Rounds */
+        .rounds-container {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+        }
+
+        .rounds-label {
+            margin-right: 10px;
+            color: #e74c3c;
+        }
+
+        /* Input Area */
+        textarea {
+            width: 100%;
+            background: #222;
+            border: 1px solid #444;
+            padding: 10px;
+            color: #ddd;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        button {
+            background: #222;
+            border: 1px solid #444;
+            color: #ddd;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #333;
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        /* Results */
+        .result {
+            background: #222;
+            border-left: 3px solid #e74c3c;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .result pre {
+            margin: 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cipher-machine">
+        <h1>AES CIPHER</h1>
+        
+        <div class="panel">
+            <h3>Key (128-bit / 16 chars)</h3>
+            <div class="key-container">
+                <input type="text" class="key-input" id="key" value="SECRETKEY123456" placeholder="Enter your 16-character key" maxlength="16">
+            </div>
+            
+            <h3>Text Input</h3>
+            <textarea id="input-text">ATTACK AT DAWN</textarea>
+            
+            <div class="button-group">
+                <button id="encrypt-btn">Encrypt</button>
+                <button id="decrypt-btn">Decrypt</button>
+            </div>
+            
+            <h3>Result</h3>
+            <div class="result" id="result">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simpler AES implementation that works reliably in the browser
+
+        // AES key expansion
+        function expandKey(key) {
+            const keyBytes = new Uint8Array(16);
+            for (let i = 0; i < 16; i++) {
+                keyBytes[i] = i < key.length ? key.charCodeAt(i) : 0;
+            }
+            return keyBytes;
+        }
+
+        // Convert string to bytes
+        function stringToBytes(str) {
+            const bytes = new Uint8Array(str.length);
+            for (let i = 0; i < str.length; i++) {
+                bytes[i] = str.charCodeAt(i) & 0xFF;
+            }
+            return bytes;
+        }
+
+        // Convert bytes to string
+        function bytesToString(bytes) {
+            let result = '';
+            for (let i = 0; i < bytes.length; i++) {
+                result += String.fromCharCode(bytes[i]);
+            }
+            return result;
+        }
+
+        // XOR two byte arrays
+        function xor(a, b) {
+            const result = new Uint8Array(a.length);
+            for (let i = 0; i < a.length; i++) {
+                result[i] = a[i] ^ b[i];
+            }
+            return result;
+        }
+
+        // Pad input data to multiple of 16 bytes (AES block size)
+        function padData(data) {
+            const padding = 16 - (data.length % 16);
+            const paddedData = new Uint8Array(data.length + padding);
+            paddedData.set(data);
+            
+            // PKCS#7 padding
+            for (let i = data.length; i < paddedData.length; i++) {
+                paddedData[i] = padding;
+            }
+            
+            return paddedData;
+        }
+
+        // Remove padding
+        function unpadData(data) {
+            const padding = data[data.length - 1];
+            if (padding > 16) {
+                return data; // Invalid padding
+            }
+            return data.slice(0, data.length - padding);
+        }
+
+        // AES encryption using SubtleCrypto API
+        async function encryptAES(plaintext, keyStr) {
+            try {
+                const encoder = new TextEncoder();
+                const keyData = encoder.encode(keyStr.padEnd(16, '\0').slice(0, 16));
+                
+                // Import the key
+                const key = await window.crypto.subtle.importKey(
+                    "raw",
+                    keyData,
+                    { name: "AES-CBC" },
+                    false,
+                    ["encrypt"]
+                );
+                
+                // Generate initialization vector (IV)
+                const iv = new Uint8Array(16);
+                window.crypto.getRandomValues(iv);
+                
+                // Encrypt the data
+                const ciphertext = await window.crypto.subtle.encrypt(
+                    {
+                        name: "AES-CBC",
+                        iv: iv
+                    },
+                    key,
+                    encoder.encode(plaintext)
+                );
+                
+                // Combine IV and ciphertext
+                const result = new Uint8Array(iv.length + ciphertext.byteLength);
+                result.set(iv);
+                result.set(new Uint8Array(ciphertext), iv.length);
+                
+                return result;
+            } catch (e) {
+                console.error("Encryption error:", e);
+                throw e;
+            }
+        }
+
+        // AES decryption using SubtleCrypto API
+        async function decryptAES(ciphertext, keyStr) {
+            try {
+                // Extract IV (first 16 bytes)
+                const iv = ciphertext.slice(0, 16);
+                const encryptedData = ciphertext.slice(16);
+                
+                const encoder = new TextEncoder();
+                const keyData = encoder.encode(keyStr.padEnd(16, '\0').slice(0, 16));
+                
+                // Import the key
+                const key = await window.crypto.subtle.importKey(
+                    "raw",
+                    keyData,
+                    { name: "AES-CBC" },
+                    false,
+                    ["decrypt"]
+                );
+                
+                // Decrypt the data
+                const decrypted = await window.crypto.subtle.decrypt(
+                    {
+                        name: "AES-CBC",
+                        iv: iv
+                    },
+                    key,
+                    encryptedData
+                );
+                
+                // Convert result to string
+                const decoder = new TextDecoder();
+                return decoder.decode(decrypted);
+            } catch (e) {
+                console.error("Decryption error:", e);
+                throw e;
+            }
+        }
+
+        // Convert array buffer to Base64
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        // Convert Base64 to array buffer
+        function base64ToArrayBuffer(base64) {
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        // Encrypt button click handler
+        document.getElementById('encrypt-btn').addEventListener('click', async function() {
+            try {
+                const plaintext = document.getElementById('input-text').value;
+                const key = document.getElementById('key').value;
+                
+                if (key.length === 0) {
+                    document.getElementById('result').innerHTML = `
+                        <p style="color: #e74c3c;"><strong>ERROR:</strong> Please enter a key.</p>
+                    `;
+                    return;
+                }
+                
+                // Encrypt data
+                const encrypted = await encryptAES(plaintext, key);
+                
+                // Convert to Base64 for display
+                const base64 = arrayBufferToBase64(encrypted);
+                
+                document.getElementById('result').innerHTML = `
+                    <p><strong>ENCRYPTED MESSAGE:</strong></p>
+                    <pre style="font-size: 1.2em;">${base64}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <p style="color: #e74c3c;"><strong>ERROR:</strong> ${error.message}</p>
+                `;
+            }
+        });
+
+        // Decrypt button click handler
+        document.getElementById('decrypt-btn').addEventListener('click', async function() {
+            try {
+                const ciphertext = document.getElementById('input-text').value;
+                const key = document.getElementById('key').value;
+                
+                if (key.length === 0) {
+                    document.getElementById('result').innerHTML = `
+                        <p style="color: #e74c3c;"><strong>ERROR:</strong> Please enter a key.</p>
+                    `;
+                    return;
+                }
+                
+                // Convert from Base64
+                const ciphertextBytes = base64ToArrayBuffer(ciphertext);
+                
+                // Decrypt data
+                const decrypted = await decryptAES(ciphertextBytes, key);
+                
+                document.getElementById('result').innerHTML = `
+                    <p><strong>DECRYPTED MESSAGE:</strong></p>
+                    <pre style="font-size: 1.2em;">${decrypted}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <p style="color: #e74c3c;"><strong>ERROR:</strong> Invalid input or incorrect key.</p>
+                `;
+            }
+        });
+
+        // Initialize with example
+        document.getElementById('encrypt-btn').click();
+    </script>
+</body>
+</html>

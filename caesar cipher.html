@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAESAR CIPHER</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #111;
+            color: #ddd;
+            margin: 0;
+            padding: 20px;
+            background-image: 
+                linear-gradient(rgba(20, 20, 20, 0.8), rgba(20, 20, 20, 0.8)),
+                url('https://www.transparenttextures.com/patterns/concrete-wall.png');
+            line-height: 1.6;
+        }
+
+        
+        .cipher-machine {
+            max-width: 1000px;
+            margin: 0 auto;
+            border: 1px solid #333;
+            padding: 20px;
+            background: rgba(10, 10, 10, 0.7);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        
+        .panel {
+            border: 1px solid #444;
+            padding: 15px;
+            background: rgba(20, 20, 20, 0.8);
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 10px 10px;
+            pointer-events: none;
+        }
+
+        /* Headers */
+        h1 {
+            color: #e74c3c;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0;
+            text-shadow: 1px 1px 2px #000;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        h3 {
+            color: #e74c3c;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        /* Shift Input */
+        .shift-input {
+            background: #222;
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            color: #ddd;
+            font-size: 16px;
+            width: 150px;
+            margin: 15px 0;
+            transition: all 0.3s;
+        }
+
+        .shift-input:focus {
+            outline: none;
+            border-color: #e74c3c;
+            background: #333;
+            box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+        }
+
+        /* Input Area */
+        textarea {
+            width: 100%;
+            background: #222;
+            border: 1px solid #444;
+            padding: 10px;
+            color: #ddd;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        button {
+            background: #222;
+            border: 1px solid #444;
+            color: #ddd;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #333;
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        /* Results */
+        .result {
+            background: #222;
+            border-left: 3px solid #e74c3c;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .result pre {
+            margin: 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Matrix Grid - Repurposed for Caesar shift visualization */
+        .shift-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .alphabet-row {
+            display: flex;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 5px 0;
+            color: #aaa;
+        }
+
+        .alphabet-cell {
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #333;
+        }
+
+        .alphabet-cell.highlight {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .shift-arrow {
+            margin: 0 5px;
+            color: #e74c3c;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cipher-machine">
+        <h1>CAESAR CIPHER</h1>
+        
+        <div class="panel">
+            <h3>Shift Value</h3>
+            <input type="number" id="shift-value" class="shift-input" value="3" min="0" max="25">
+            
+            <div class="shift-visual">
+                <div>
+                    <div class="alphabet-row" id="original-alphabet"></div>
+                    <div class="shift-arrow">↓</div>
+                    <div class="alphabet-row" id="shifted-alphabet"></div>
+                </div>
+            </div>
+            
+            <h3>Text Input</h3>
+            <textarea id="input-text">ATTACK</textarea>
+            
+            <div class="button-group">
+                <button id="encrypt-btn">Encrypt</button>
+                <button id="decrypt-btn">Decrypt</button>
+            </div>
+            
+            <h3>Result</h3>
+            <div class="result" id="result">
+                <pre>Results will appear here...</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Alphabet definition
+        const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        
+        // Get shift value
+        function getShiftValue() {
+            let value = parseInt(document.getElementById('shift-value').value) || 0;
+            return ((value % 26) + 26) % 26; // Ensure it's between 0-25
+        }
+
+        // Update the alphabet visualization
+        function updateAlphabetVisualization() {
+            const shift = getShiftValue();
+            const originalAlphabet = document.getElementById('original-alphabet');
+            const shiftedAlphabet = document.getElementById('shifted-alphabet');
+            
+            originalAlphabet.innerHTML = '';
+            shiftedAlphabet.innerHTML = '';
+            
+            // Create original alphabet display
+            for (let i = 0; i < 26; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'alphabet-cell';
+                cell.textContent = ALPHABET[i];
+                originalAlphabet.appendChild(cell);
+            }
+            
+            // Create shifted alphabet display
+            for (let i = 0; i < 26; i++) {
+                const shiftedIndex = (i + shift) % 26;
+                const cell = document.createElement('div');
+                cell.className = 'alphabet-cell';
+                cell.textContent = ALPHABET[shiftedIndex];
+                shiftedAlphabet.appendChild(cell);
+            }
+        }
+
+        // Convert text to uppercase and filter non-alphabet chars
+        function cleanText(text) {
+            return text.toUpperCase().split('')
+                .filter(char => ALPHABET.includes(char))
+                .join('');
+        }
+
+        // Caesar cipher encryption
+        function caesarEncrypt(text, shift) {
+            return text.split('').map(char => {
+                if (!ALPHABET.includes(char)) return char;
+                const index = ALPHABET.indexOf(char);
+                const shiftedIndex = (index + shift) % 26;
+                return ALPHABET[shiftedIndex];
+            }).join('');
+        }
+
+        // Caesar cipher decryption
+        function caesarDecrypt(text, shift) {
+            return text.split('').map(char => {
+                if (!ALPHABET.includes(char)) return char;
+                const index = ALPHABET.indexOf(char);
+                const shiftedIndex = (index - shift + 26) % 26;
+                return ALPHABET[shiftedIndex];
+            }).join('');
+        }
+
+        // Encrypt function
+        function encrypt() {
+            const plaintext = cleanText(document.getElementById('input-text').value);
+            const shift = getShiftValue();
+            
+            // Encrypt text
+            const ciphertext = caesarEncrypt(plaintext, shift);
+            
+            // Display result
+            document.getElementById('result').innerHTML = `
+                <p><strong>ENCRYPTED MESSAGE:</strong></p>
+                <pre style="font-size: 1.2em;">${ciphertext}</pre>
+            `;
+        }
+
+        // Decrypt function
+        function decrypt() {
+            const ciphertext = cleanText(document.getElementById('input-text').value);
+            const shift = getShiftValue();
+            
+            // Decrypt text
+            const plaintext = caesarDecrypt(ciphertext, shift);
+            
+            // Display result
+            document.getElementById('result').innerHTML = `
+                <p><strong>DECRYPTED MESSAGE:</strong></p>
+                <pre style="font-size: 1.2em;">${plaintext}</pre>
+            `;
+        }
+
+        // Event listeners
+        document.getElementById('encrypt-btn').addEventListener('click', encrypt);
+        document.getElementById('decrypt-btn').addEventListener('click', decrypt);
+        document.getElementById('shift-value').addEventListener('input', updateAlphabetVisualization);
+
+        // Initialize
+        updateAlphabetVisualization();
+        encrypt();
+    </script>
+</body>
+</html>
